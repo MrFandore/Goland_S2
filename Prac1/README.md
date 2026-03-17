@@ -78,7 +78,6 @@ curl -i http://localhost:8082/v1/tasks -H "X-Request-ID: req-003"
 ## Полная документация API – в файле docs/pz17_api.md.
 
 # Скриншот 1: Запуск Auth service
-## Файл: picture/skrin_1.png
 
 Что видно на скриншоте:
 
