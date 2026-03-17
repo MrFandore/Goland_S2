@@ -127,7 +127,6 @@ token_type (значение demo-token и Bearer).
 
 В логах Tasks service – запись с req-no-token и статусом 401.(Общий скрин 4 и 5 ошибки ниже)
 ![img.png](Фотокарточки/4.png)
-# Файл: picture/skrin_5.png
 ## Что видно на скриншоте:
 
 Команда invoke-restmethod с заголовком Authorization: Bearer wrong-token.
@@ -139,7 +138,6 @@ token_type (значение demo-token и Bearer).
 ## Скриншот общих ошибок в Tasks
 ![img_1.png](Фотокарточки/4_5.png)
 # Скриншот 6: Auth service недоступен (503)
-## Файл: picture/skrin_7.png
 Что видно на скриншоте:
 
 Auth service остановлен (Ctrl+C в окне 1).
@@ -153,7 +151,6 @@ Auth service остановлен (Ctrl+C в окне 1).
 Подтверждение, что Tasks корректно обрабатывает недоступность Auth.
 ![img.png](Фотокарточки/img.png)
 # Скриншот 7: Получение списка задач после восстановления Auth
-## Файл: picture/skrin_8.png
 Что видно на скриншоте:
 
 Auth service запущен заново.
@@ -164,5 +161,5 @@ Auth service запущен заново.
 
 В логах Auth и Tasks – соответствующие записи с request-id req-list.
 
-![img.png](picture/skrin_7.png)
+![img.png](Фотокарточки/7.png)
 ]()
