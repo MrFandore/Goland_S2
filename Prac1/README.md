@@ -88,7 +88,6 @@ curl -i http://localhost:8082/v1/tasks -H "X-Request-ID: req-003"
 
 ![img.png](Фотокарточки/1.png)
 # Скриншот 2: Запуск Tasks service
-## Файл: picture/skrin_2.png
 Что видно на скриншоте:
 
 ```powershell
@@ -103,7 +102,6 @@ go run ./cmd/tasks
 
 ![img.png](Фотокарточки/2.png)
 # Скриншот 3: Получение токена через Auth service
-## Файл: picture/skrin_3.png
 Что видно на скриншоте:
 ```json
 Команда invoke-restmethod для отправки POST-запроса на 
@@ -118,7 +116,6 @@ token_type (значение demo-token и Bearer).
 
 ![img.png](Фотокарточки/3.png)
 # Скриншот 4: Запрос к Tasks без токена (401)
-## Файл: picture/skrin_5.png
 Что видно на скриншоте:
 
 Команда invoke-restmethod без заголовка Authorization.
