@@ -162,4 +162,3 @@ Auth service запущен заново.
 В логах Auth и Tasks – соответствующие записи с request-id req-list.
 
 ![img.png](Фотокарточки/7.png)
-]()
