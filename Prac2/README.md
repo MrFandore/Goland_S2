@@ -1,53 +1,101 @@
-```markdown
-# Практика 2 - gRPC микросервисы с аутентификацией
+# Практическое занятие №2
+ФИО: Пряшников Дмитрий Максимович
+Группа: ПИМО-01-25
+## Описание решения
+
+Проект состоит из двух микросервисов, взаимодействующих по **gRPC**:
+- **Auth service** – gRPC сервер, реализующий метод `Verify` для проверки токена. В демо-режиме считает валидным только токен `"valid-token"`.
+- **Tasks service** – HTTP API (REST) для управления задачами. Каждый защищённый запрос проходит через middleware, который вызывает gRPC метод `Verify` в Auth service с таймаутом 2 секунды.
+
+Код генерируется из единого `.proto` контракта, что гарантирует строгую типизацию и согласованность данных между сервисами. При недоступности Auth или превышении таймаута Tasks возвращает клиенту соответствующий HTTP статус (503/504).
+
+## Границы ответственности
+
+- **Auth service**: только проверка токена. Не хранит состояние, не ведёт логов доступа (кроме отладочных). Возвращает gRPC статусы:
+  - `codes.Unauthenticated` – невалидный или отсутствующий токен.
+  - `codes.Internal` – внутренняя ошибка (не используется в демо).
+- **Tasks service**:
+  - Публичный эндпоинт `GET /health` для проверки доступности.
+  - Защищённый эндпоинт `POST /tasks` для создания задачи (сохраняется в памяти).
+  - В middleware извлекает токен из заголовка `Authorization`, вызывает Auth с таймаутом, при успехе сохраняет `subject` (идентификатор пользователя) в контексте запроса.
+  - Маппинг gRPC ошибок в HTTP:
+    - `Unauthenticated` → 401
+    - `DeadlineExceeded` → 504
+    - остальные (включая недоступность сервера) → 503
+
+## Cхема взаимодействия
+
+```
+Клиент (curl/Postman)
+        │
+        │ POST /tasks (с токеном)
+        ▼
+┌─────────────────┐         gRPC (порт 50051)         ┌─────────────────┐
+│  Tasks service  │ ────────────────────────────────▶ │  Auth service   │
+│   (порт 8082)   │ ◀──────────────────────────────── │  (gRPC server)  │
+└─────────────────┘    Verify(token) → (valid, sub)   └─────────────────┘
+        │
+        │ ответ 201/4xx/5xx
+        ▼
+      Клиент
+```
+
+**Последовательность обработки запроса**:
+1. Tasks получает HTTP POST `/tasks` с заголовком `Authorization: Bearer <token>`.
+2. Middleware создаёт контекст с таймаутом 2 секунды и вызывает gRPC метод `AuthService.Verify`.
+3. Auth проверяет токен (в демо: `<token>` == `"valid-token"`).
+4. Если токен верен, Auth возвращает `valid=true` и `subject=user-123`.
+5. Tasks сохраняет задачу в памяти, привязывая её к `subject`, и возвращает клиенту `201 Created`.
+6. При любой ошибке (невалидный токен, таймаут, недоступность Auth) Tasks возвращает соответствующий HTTP статус с сообщением об ошибке.
 
 ## Структура проекта
+
 ```
-Go_S2/
+Prac2//
 ├── go.mod
 ├── pkg/
 │   └── api/
-│       └── auth/                # сгенерированный код из proto
+│       └── auth/              
 │           ├── auth.pb.go
 │           └── auth_grpc.pb.go
-└── Prac2/
+│
 ├── proto/
-│   └── auth.proto            # контракт gRPC сервиса
+│   └── auth.proto            
 └── services/
-├── auth/                  # gRPC сервер (Auth Service)
+├── auth/                  
 │   ├── go.mod
 │   ├── cmd/
 │   │   └── auth/
 │   │       └── main.go
 │   └── internal/
 │       └── server/
-│           └── server.go  # реализация Verify метода
-└── tasks/                  # HTTP API (Tasks Service)
+│           └── server.go 
+└── tasks/                  
 ├── go.mod
 ├── cmd/
 │   └── tasks/
 │       └── main.go
 └── internal/
 ├── client/
-│   └── auth_client.go  # gRPC клиент к Auth
+│   └── auth_client.go  
 ├── handlers/
-│   └── tasks.go        # HTTP обработчики
+│   └── tasks.go        
 └── middleware/
-└── auth.go          # middleware проверки токена
+└── auth.go         
 ```
-
 ## Описание файлов
-- **go.mod** (корневой) - корневой модуль проекта, используется для локальных замен (replace)
-- **pkg/api/auth/** - автоматически сгенерированный код из proto-файла (структуры и gRPC интерфейсы)
-- **Prac2/proto/auth.proto** - Protobuf контракт сервиса аутентификации
-- **services/auth/...** - реализация gRPC сервера Auth:
-  - `cmd/auth/main.go` - точка входа, запуск gRPC сервера
-  - `internal/server/server.go` - бизнес-логика метода Verify (проверка токена)
-- **services/tasks/...** - HTTP API сервиса задач:
-  - `cmd/tasks/main.go` - запуск HTTP сервера, подключение gRPC клиента
-  - `internal/client/auth_client.go` - обёртка для gRPC вызовов к Auth с таймаутом
-  - `internal/middleware/auth.go` - middleware, проверяющий JWT через gRPC
-  - `internal/handlers/tasks.go` - обработчик создания задачи (пример защищённого ресурса)
+
+| Файл/папка | Назначение |
+|------------|------------|
+| `go.mod` (корневой) | Корневой модуль проекта, используется для локальных замен (replace) |
+| `pkg/api/auth/` | Автоматически сгенерированный код из proto-файла (структуры и gRPC интерфейсы) |
+| `Prac2/proto/auth.proto` | Protobuf контракт сервиса аутентификации |
+| `services/auth/cmd/auth/main.go` | Точка входа Auth service, запуск gRPC сервера |
+| `services/auth/internal/server/server.go` | Бизнес-логика метода Verify |
+| `services/tasks/cmd/tasks/main.go` | Точка входа Tasks service, подключение gRPC клиента |
+| `services/tasks/internal/client/auth_client.go` | Обёртка для gRPC вызовов к Auth с таймаутом |
+| `services/tasks/internal/middleware/auth.go` | Middleware для проверки JWT через gRPC |
+| `services/tasks/internal/handlers/tasks.go` | HTTP обработчик создания задачи |
 
 ## Запуск проекта
 
@@ -84,10 +132,8 @@ go run ./cmd/tasks
 
 ## Доступные эндпоинты (Tasks Service)
 
-```
-POST /tasks
-```
-Создание задачи (требуется валидный токен в заголовке Authorization).
+### `POST /tasks`
+Создание задачи (требуется валидный токен).
 
 **Заголовок:** `Authorization: Bearer <token>`  
 **Тело запроса:** `{"title":"Название задачи"}`
@@ -102,13 +148,11 @@ POST /tasks
 ```
 
 **Ошибки:**
-- `401 Unauthorized` - отсутствует или неверный токен
-- `503 Service Unavailable` - Auth сервис недоступен
-- `504 Gateway Timeout` - превышено время ожидания ответа от Auth
+- `401 Unauthorized` – отсутствует или неверный токен
+- `503 Service Unavailable` – Auth сервис недоступен
+- `504 Gateway Timeout` – превышено время ожидания ответа от Auth
 
-```
-GET /health
-```
+### `GET /health`
 Проверка работоспособности (не требует токена).  
 Ответ: `OK`
 
@@ -146,7 +190,8 @@ curl http://localhost:8082/health
 
 ### Через PowerShell (Windows)
 
-```powershell
+```
+powershell
 # Успешный запрос
 $body = @{title="Learn gRPC"} | ConvertTo-Json
 Invoke-WebRequest -Uri http://localhost:8082/tasks -Method POST `
@@ -164,33 +209,14 @@ Invoke-WebRequest -Uri http://localhost:8082/tasks -Method POST `
 - **gRPC взаимодействие** между сервисами Auth и Tasks
 - **Deadline/таймаут** при вызове gRPC (2 секунды) для предотвращения зависаний
 - **Обработка ошибок** и преобразование gRPC статусов в HTTP коды:
-    - `codes.Unauthenticated` → 401
-    - `codes.DeadlineExceeded` → 504
-    - остальные ошибки → 503
+  - `codes.Unauthenticated` → 401
+  - `codes.DeadlineExceeded` → 504
+  - остальные ошибки → 503
 - **Stateless аутентификация** через токен (проверка в Auth)
 - **Локальная разработка** с использованием replace в go.mod для общих пакетов
 
 ## Требования
+
 - Установленный Go версии 1.21 или выше
 - Protocol Buffers компилятор (`protoc`) и плагины `protoc-gen-go`, `protoc-gen-go-grpc`
 - (Опционально) Git
-
-## Решение проблем
-
-**Ошибка генерации proto:**
-- Проверьте, что `protoc` доступен в PATH
-- Убедитесь, что установлены плагины: `go install google.golang.org/protobuf/cmd/protoc-gen-go@latest` и `go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest`
-- Проверьте путь к proto-файлу: он должен быть указан относительно текущей директории
-
-**Ошибка подключения к Auth:**
-- Убедитесь, что Auth сервис запущен и слушает порт 50051
-- Проверьте переменную `AUTH_GRPC_ADDR` в Tasks: `localhost:50051` (без протокола)
-
-**Зависание запросов при недоступном Auth:**
-- В коде клиента установлен таймаут 2 секунды, после которого возвращается ошибка 504
-- Если этого не происходит, проверьте, что контекст с таймаутом действительно используется
-
-**Проблемы с go mod:**
-- В каждом сервисе выполните `go mod tidy` для загрузки зависимостей
-- Убедитесь, что replace в go.mod указывает на правильный корневой модуль (например, `github.com/yourusername/Go_S2 => ../../../`)
-```
