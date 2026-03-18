@@ -134,7 +134,7 @@ token_type (значение demo-token и Bearer).
 В логах Tasks service – запись с req-wrong-token и статусом 401.
 ![img.png](Фотокарточки/5.png)
 ## Скриншот общих ошибок в Tasks
-![img_1.png](Фотокарточки/4_5.png)
+![img_1.png](Фотокарточки/6.png)
 # Скриншот 6: Auth service недоступен (503)
 Что видно на скриншоте:
 
