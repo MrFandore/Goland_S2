@@ -1,5 +1,5 @@
 # Практическое занятие №2
-![cat-silly.gif](%D1%EA%F0%E8%ED%F8%EE%F2%FB%2Fcat-silly.gif)
+![cat-silly.gif](Скриншоты%2Fcat-silly.gif)
 ФИО: Пряшников Дмитрий Максимович
 Группа: ПИМО-01-25
 ## Описание решения
@@ -167,7 +167,7 @@ go run ./cmd/tasks
 ![img.png](Скриншоты/13_Отработка_Третьего_Запроса_503.png)
 
 ## Ответы на вопросы
-![komaru-cat-cat.gif](%D1%EA%F0%E8%ED%F8%EE%F2%FB%2Fkomaru-cat-cat.gif)
+![komaru-cat-cat.gif](Скриншоты/komaru-cat-cat.gif)
 
 ### 1. Что такое .proto и почему он считается контрактом?
 
