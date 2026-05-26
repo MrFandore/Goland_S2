@@ -1,0 +1,1 @@
+[worker] 2026/05/11 14:40:00.882016 queue declare error: Exception (406) Reason: "PRECONDITION_FAILED - invalid arg 'x-dead-letter-routing-key' for queue 'task_jobs' in vhost '/': routing_key_but_no_dlx_defined"
